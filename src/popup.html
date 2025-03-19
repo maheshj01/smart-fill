@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>LinkedIn Cookie Fetcher</title>
+    <style>
+        body {
+            width: 300px;
+            padding: 10px;
+            font-family: Arial, sans-serif;
+        }
+
+        button {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #0a66c2;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:disabled {
+            background-color: #ccc;
+        }
+
+        .status {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+
+        .success {
+            background-color: #e6f4ea;
+            color: #1e4620;
+        }
+
+        .error {
+            background-color: #fce8e6;
+            color: #c5221f;
+        }
+
+        .cookie-list {
+            margin-top: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .cookie-item {
+            padding: 5px;
+            border-bottom: 1px solid #eee;
+            word-break: break-all;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>LinkedIn Cookie Fetcher</h2>
+    <button id="fetchButton">Fetch Cookies</button>
+    <div id="status" class="status" style="display: none;"></div>
+    <!-- on each cookie tapped copy to clipboard -->
+    <div id="cookieList" class="cookie-list"></div>
+    <script src="popup.js"></script>
+</body>
+
+</html>
