@@ -2,7 +2,11 @@
   "name": "smart-fill",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "tsc",
+    "watch": "tsc --watch",
+    "clean": "rm -rf dist",
+    "start": "npm run build && npm run serve",
+    "serve": "npx http-server dist"
   },
   "keywords": [],
   "author": "",
@@ -10,6 +14,7 @@
   "description": "",
   "devDependencies": {
     "@types/chrome": "^0.0.309",
+    "@types/node": "^22.13.14",
     "typescript": "^5.8.2"
   }
 }
