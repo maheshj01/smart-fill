@@ -3,7 +3,6 @@ chrome.runtime.onInstalled.addListener(() => {
     console.log('AutoFill Extension installed!');
 });
 
-
 // send message to content script
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('message received', message);
