@@ -1,5 +1,6 @@
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const CopyPlugin = require('copy-webpack-plugin');
+const { DefinePlugin } = require('webpack');
 const path = require('path');
 const { watch } = require('fs');
 
@@ -29,7 +30,10 @@ module.exports = {
       },
       { from: path.resolve('assets'), to: path.resolve('dist/assets') }
       ]
-    })
+    }),
+    new DefinePlugin({
+      'process.env.GOOGLE_GEMINI_API_KEY;': JSON.stringify(process.env.GOOGLE_GEMINI_API_KEY)
+    }),
   ],
   module: {
     rules: [

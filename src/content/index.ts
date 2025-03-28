@@ -1,5 +1,10 @@
 
+
 "use strict";
+
+import Constants from "../react/components/Constants";
+import Gemini from "./gemini";
+
 let currentInput: HTMLInputElement | null = null;
 let autoFillIcon: HTMLElement | null = null;
 let isProcessingFocusEvent = false;
@@ -15,7 +20,7 @@ function injectAutoFillIcon() {
 
     // Create the button
     autoFillIcon = document.createElement('button');
-    autoFillIcon.id = 'autofill-icon';
+    autoFillIcon.id = Constants.autoFillIconId;
 
     // Create an image element and set the source
     const img = document.createElement('img');
@@ -73,7 +78,7 @@ function handleIconClick(event: MouseEvent) {
 }
 
 function removeAutoFillIcon() {
-  const existingIcon = document.getElementById('autofill-icon');
+  const existingIcon = document.getElementById(Constants.autoFillIconId);
   if (existingIcon) {
     existingIcon.remove();
   }
@@ -204,61 +209,16 @@ function getFormContext(form: HTMLFormElement): object {
   };
 }
 
-async function fetchAutoFillData(context: object): Promise<string> {
-  try {
-    console.log('Fetching autofill data for context:', context); // Debug logging
-    // For now, return a sample response based on the context
-    // In a real implementation, you would make an API call here
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const contextObj = context as any;
-    const label = contextObj.label || '';
-    // Generate different responses based on detected label/context
-    if (label.toLowerCase().includes('email') || contextObj.name.toLowerCase().includes('email')) {
-      return 'user@example.com';
-    } else if (label.toLowerCase().includes('name') || contextObj.name.toLowerCase().includes('name')) {
-      if (label.toLowerCase().includes('first')) {
-        return 'John';
-      } else if (label.toLowerCase().includes('last')) {
-        return 'Doe';
-      } else {
-        return 'John Doe';
-      }
-    } else if (label.toLowerCase().includes('phone') || contextObj.name.toLowerCase().includes('phone')) {
-      return '555-123-4567';
-    } else if (label.toLowerCase().includes('address') || contextObj.name.toLowerCase().includes('address')) {
-      return '123 Main St, Anytown, USA';
-    } else {
-      // Default response with some context info
-      return `Auto filled data for ${label || 'this field'}`;
-    }
-  } catch (error) {
-    console.error('Error fetching data:', error);
-    return 'Error occurred';
-  }
-}
-
-async function fetchByKey(key: string): Promise<string> {
-  return new Promise((resolve, reject) => {
-    chrome.storage.local.get([key], (result) => {
-      if (result[key]) {
-        resolve(result[key]);
-      } else {
-        reject('No data found');
-      }
-    });
-  });
-}
 
 async function handleAutoFill(input: HTMLInputElement | null) {
   console.log('Handling autofill for', input); // Debug logging
   try {
+    const gemini = new Gemini(API_Key || '');
     if (!input) return;
-
     const inputContext = getInputContext(input);
     console.log('Input context:', inputContext);
 
-    const data = await fetchAutoFillData(inputContext);
+    const data = await gemini.fetchAutoFillData(inputContext);
     console.log('Got data:', data); // Debug logging
 
     if (input) {
@@ -297,7 +257,7 @@ document.addEventListener('focusout', function (event: FocusEvent) {
   const relatedTarget = event.relatedTarget as HTMLElement;
 
   // Don't remove if the focus is moving to our autofill icon
-  if (relatedTarget && relatedTarget.id === 'autofill-icon') {
+  if (relatedTarget && relatedTarget.id === Constants.autoFillIconId) {
     return;
   }
 
@@ -330,4 +290,20 @@ window.addEventListener('resize', function () {
 // Initial check for any focused elements when the script loads
 window.addEventListener('load', function () {
   setTimeout(injectAutoFillIcon, 500);
+});
+
+// when page is loaded, get api key from local storage
+
+let API_Key = '';
+
+window.addEventListener('load', () => {
+  // Send a message to the background script to fetch the API key
+  chrome.runtime.sendMessage({ action: 'get_api_key' }, (response) => {
+    if (response && response.api_key) {
+      API_Key = response.api_key;
+      console.log('Received API Key:', API_Key);
+    } else {
+      console.error('API Key not found!');
+    }
+  });
 });
