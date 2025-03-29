@@ -14,12 +14,15 @@ function injectAutoFillIcon() {
   // Remove any existing icons first
   removeAutoFillIcon();
 
-  // Only show the icon if an input field is focused
-  const focusedElement = document.activeElement as HTMLInputElement | HTMLTextAreaElement | null;
+  // Get the currently focused element
+  let focusedElement = document.activeElement;
 
+  if (!focusedElement) return;
+
+  // Check if the element is a standard input field
   if (
-    focusedElement &&
-    (focusedElement.tagName === 'INPUT' || focusedElement.tagName === 'TEXTAREA')
+    focusedElement.tagName === 'INPUT' ||
+    focusedElement.tagName === 'TEXTAREA'
   ) {
     // Ignore input types that shouldn't have the autofill icon
     if (
@@ -28,41 +31,52 @@ function injectAutoFillIcon() {
     ) {
       return;
     }
-
-    currentInput = focusedElement as HTMLInputElement;
-
-    // Create the button
-    autoFillIcon = document.createElement('button');
-    autoFillIcon.id = Constants.autoFillIconId;
-
-    // Create an image element and set the source
-    const img = document.createElement('img');
-    img.src = chrome.runtime.getURL('../assets/gemini.png');
-    img.alt = 'Auto-fill Icon';
-    img.style.width = '24px';
-    img.style.height = '24px';
-
-    autoFillIcon.appendChild(img);
-
-    // Style the button
-    Object.assign(autoFillIcon.style, {
-      position: 'absolute',
-      cursor: 'pointer',
-      border: 'none',
-      background: 'transparent',
-      zIndex: '10000', // Ensure it appears above other elements
-    });
-
-    const rect = currentInput.getBoundingClientRect();
-    autoFillIcon.style.left = `${rect.right - 30}px`;
-    autoFillIcon.style.top = `${window.scrollY + rect.top + (rect.height - 24) / 2}px`; // Center vertically
-
-    // Add the click event listener with capture to ensure it gets the event first
-    autoFillIcon.addEventListener('click', handleIconClick, true);
-    autoFillIcon.addEventListener('mousedown', handleMouseDown, true);
-
-    document.body.appendChild(autoFillIcon);
   }
+  // Check for div-based inputs (e.g., contenteditable)
+  else if (
+    focusedElement.getAttribute('contenteditable') === 'true' ||
+    focusedElement.getAttribute('role') === 'textbox' ||
+    focusedElement.classList.contains('custom-input') // Add common class names if needed
+  ) {
+    // Detected a non-standard input field
+  }
+  else {
+    return; // Not an input field
+  }
+
+  currentInput = focusedElement as HTMLInputElement;
+
+  // Create the button
+  autoFillIcon = document.createElement('button');
+  autoFillIcon.id = Constants.autoFillIconId;
+
+  // Create an image element and set the source
+  const img = document.createElement('img');
+  img.src = chrome.runtime.getURL('../assets/gemini.png');
+  img.alt = 'Auto-fill Icon';
+  img.style.width = '24px';
+  img.style.height = '24px';
+
+  autoFillIcon.appendChild(img);
+
+  // Style the button
+  Object.assign(autoFillIcon.style, {
+    position: 'absolute',
+    cursor: 'pointer',
+    border: 'none',
+    background: 'transparent',
+    zIndex: '10000', // Ensure it appears above other elements
+  });
+
+  const rect = currentInput.getBoundingClientRect();
+  autoFillIcon.style.left = `${rect.right - 30}px`;
+  autoFillIcon.style.top = `${window.scrollY + rect.top + (rect.height - 24) / 2}px`; // Center vertically
+
+  // Add event listeners
+  autoFillIcon.addEventListener('click', handleIconClick, true);
+  autoFillIcon.addEventListener('mousedown', handleMouseDown, true);
+
+  document.body.appendChild(autoFillIcon);
 }
 
 function handleMouseDown(event: MouseEvent) {

@@ -25,7 +25,6 @@ class Gemini {
 
     async fetchAutoFillData(context: Record<string, any>, currentValue?: string): Promise<string> {
         try {
-            console.log('Fetching autofill data:', context, "api key=", this.apiKey);
             const contextObj = context as any;
             const label = contextObj.label?.toLowerCase() || '';
             const name = contextObj.name?.toLowerCase() || '';
