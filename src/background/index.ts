@@ -1,4 +1,4 @@
-import Constants from "../react/components/Constants";
+import Constants from "../react/Constants";
 
 // background.ts (Optional for managing state like tokens)
 chrome.runtime.onInstalled.addListener(() => {

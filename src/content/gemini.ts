@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import Constants from "../react/components/Constants";
+import Constants from "../react/Constants";
 
 class Gemini {
     apiKey: string;

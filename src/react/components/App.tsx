@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import "./App.css";
-import Constants from './Constants';
+import Constants from '../Constants';
 import Gemini from '../../content/gemini';
 
 const PromptForm: React.FC = () => {

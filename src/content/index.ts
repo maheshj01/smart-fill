@@ -3,7 +3,7 @@
 "use strict";
 
 import { resourceUsage } from "process";
-import Constants from "../react/components/Constants";
+import Constants from "../react/Constants";
 import Gemini from "./gemini";
 
 let currentInput: HTMLInputElement | null = null;
