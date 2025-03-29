@@ -14,9 +14,21 @@ function injectAutoFillIcon() {
   removeAutoFillIcon();
 
   // Only show the icon if an input field is focused
-  const focusedElement: HTMLInputElement | null = document.activeElement as HTMLInputElement;
-  if (focusedElement && (focusedElement.tagName === 'INPUT' || focusedElement.tagName === 'TEXTAREA')) {
-    currentInput = focusedElement;
+  const focusedElement = document.activeElement as HTMLInputElement | HTMLTextAreaElement | null;
+
+  if (
+    focusedElement &&
+    (focusedElement.tagName === 'INPUT' || focusedElement.tagName === 'TEXTAREA')
+  ) {
+    // Ignore input types that shouldn't have the autofill icon
+    if (
+      focusedElement instanceof HTMLInputElement &&
+      ['radio', 'checkbox', 'password'].includes(focusedElement.type)
+    ) {
+      return;
+    }
+
+    currentInput = focusedElement as HTMLInputElement;
 
     // Create the button
     autoFillIcon = document.createElement('button');
@@ -32,11 +44,13 @@ function injectAutoFillIcon() {
     autoFillIcon.appendChild(img);
 
     // Style the button
-    autoFillIcon.style.position = 'absolute';
-    autoFillIcon.style.cursor = 'pointer';
-    autoFillIcon.style.border = 'none';
-    autoFillIcon.style.background = 'transparent';
-    autoFillIcon.style.zIndex = '10000'; // Ensure it appears above other elements
+    Object.assign(autoFillIcon.style, {
+      position: 'absolute',
+      cursor: 'pointer',
+      border: 'none',
+      background: 'transparent',
+      zIndex: '10000', // Ensure it appears above other elements
+    });
 
     const rect = currentInput.getBoundingClientRect();
     autoFillIcon.style.left = `${rect.right - 30}px`;
