@@ -3,23 +3,14 @@ import Constants from "../react/components/Constants";
 
 class Gemini {
     apiKey: string;
+    resumeMap: Record<string, string>; // Ensures proper indexing
+    resumeData: Record<string, any>;
 
-    constructor(apiKey: string) {
+    constructor(apiKey: string, resumeMap: Record<string, string> = {}, resumeData: Record<string, any> = {}) {
         this.apiKey = apiKey;
+        this.resumeMap = resumeMap;
+        this.resumeData = resumeData;
     }
-    async fetchData(method_key: string): Promise<any> {
-        chrome.runtime.sendMessage({ action: method_key }, (response) => {
-            if (response && response.data) {
-                return response.data;
-            } else {
-                console.log('No resume data found');
-                return '';
-            }
-        });
-        return '';
-    }
-
-
     async generateContent(prompt: String): Promise<string> {
         try {
             const genAI = new GoogleGenerativeAI(this.apiKey);
@@ -28,38 +19,34 @@ class Gemini {
             const textResponse = await result.response;
             return textResponse.text();
         } catch (error) {
-            console.error('Error querying Gemini:', error);
             return `An error occurred while fetching the response. ${error}`;
         }
     }
 
-    async fetchAutoFillData(context: object, currentValue?: string): Promise<string> {
+    async fetchAutoFillData(context: Record<string, any>, currentValue?: string): Promise<string> {
         try {
             console.log('Fetching autofill data:', context, "api key=", this.apiKey);
-            const resumeMap = await this.fetchData(Constants.getMappedResumeData);
-            console.log('resumeMap:', resumeMap);
             const contextObj = context as any;
             const label = contextObj.label?.toLowerCase() || '';
             const name = contextObj.name?.toLowerCase() || '';
 
-            // Try finding a match in the resumeData first
-            for (const key of Object.keys(resumeMap)) {
+            // 1. Try finding a match in resumeMap
+            for (const key of Object.keys(this.resumeMap)) {
                 if (label.includes(key) || name.includes(key)) {
-                    return resumeMap[key as string];
+                    return this.resumeMap[key];
                 }
             }
-
-            // If no match is found, try extracting a value from resumeData
-            const matchedData = resumeMap[label] || resumeMap[name];
+            // // If no match is found, try extracting a value from resumeData
+            const matchedData = this.resumeMap[label] || this.resumeMap[name];
             if (matchedData) return matchedData;
 
-            // If no relevant data is found, generate content using Gemini API
-            const resumeDataContext = await this.fetchData(Constants.getResumeData);
+            // // If no relevant data is found, generate content using Gemini API
+            // await this.fetchData(Constants.getResumeData);
             const prompt = currentValue && currentValue.length > 0
                 ? currentValue
                 : `
                     Given this resume context:
-                    ${JSON.stringify(resumeDataContext, null, 2)}
+                    ${JSON.stringify(this.resumeData, null, 2)}
     
                     Extract the most relevant value for the input field labeled as: "${label}".
                     - Ensure the response is concise and formatted correctly.

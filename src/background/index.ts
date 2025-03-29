@@ -2,7 +2,7 @@ import Constants from "../react/components/Constants";
 
 // background.ts (Optional for managing state like tokens)
 chrome.runtime.onInstalled.addListener(() => {
-    console.log('AutoFill Extension installed!');
+    // console.log('AutoFill Extension installed!');
 });
 
 async function fetchData(methodKey: string): Promise<any> {
@@ -14,8 +14,6 @@ async function fetchData(methodKey: string): Promise<any> {
 }
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('Message received:', message);
-
     (async () => {
         try {
             let responseData = null;

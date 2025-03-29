@@ -62,7 +62,6 @@ function injectAutoFillIcon() {
     autoFillIcon.addEventListener('mousedown', handleMouseDown, true);
 
     document.body.appendChild(autoFillIcon);
-    console.log('Autofill icon injected'); // Debug logging
   }
 }
 
@@ -73,7 +72,6 @@ function handleMouseDown(event: MouseEvent) {
 }
 
 function handleIconClick(event: MouseEvent) {
-  console.log('Autofill icon clicked'); // Debug logging
   event.preventDefault();
   event.stopPropagation();
 
@@ -178,7 +176,8 @@ function getInputContext(input: HTMLElement): object {
     value: (input as HTMLInputElement).value || '',
     form: input.closest('form') ? getFormContext(input.closest('form') as HTMLFormElement) : null,
     pageTitle: document.title,
-    url: window.location.href
+    url: window.location.href,
+    description: document.querySelector('meta[name="description"]')?.getAttribute('content') || '',
   };
 
   return context;
@@ -227,18 +226,16 @@ function getFormContext(form: HTMLFormElement): object {
 
 async function handleAutoFill(input: HTMLInputElement | null) {
   try {
-    const gemini = new Gemini(API_Key || '');
+    const gemini = new Gemini(API_Key || '', mappedResumeData || {}, resumeDataRaw || {});
     if (!input) return;
     const inputContext = getInputContext(input);
-    console.log('Input context:', inputContext); // Debug logging
     const currentInputText = input.value;
-    const data = await gemini.fetchAutoFillData(inputContext, currentInputText);
+    const data = await gemini.fetchAutoFillData(inputContext, currentInputText,);
 
     if (input) {
       input.value = data;
       // Trigger input event to notify the page of the change
       input.dispatchEvent(new Event('input', { bubbles: true }));
-      console.log('Input value set to:', data); // Debug logging
     }
   } catch (error) {
     console.error('Error in handleAutoFill:', error);
@@ -250,8 +247,6 @@ document.addEventListener('focusin', function (event: FocusEvent) {
   if (isProcessingFocusEvent) return;
 
   const target = event.target as HTMLElement;
-  console.log('Focus event detected on', target.tagName); // Debug logging
-
   if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA')) {
     // Small delay to let any previous focus events complete
     setTimeout(() => {
@@ -308,7 +303,7 @@ window.addEventListener('load', function () {
 // when page is loaded, get api key from local storage
 
 let API_Key = '';
-let resumeData = '';
+let resumeDataRaw = {};
 let mappedResumeData = {};
 
 window.addEventListener('load', async () => {
@@ -335,7 +330,7 @@ window.addEventListener('load', async () => {
 
     // Extract values from responses
     API_Key = (apiKeyResponse as any)?.data;
-    resumeData = (resumeResponse as any)?.data;
+    resumeDataRaw = (resumeResponse as any)?.data;
     const resumeMapData = (mappedResumeResponse as any)?.data;
 
     // If mapped resume data is wrapped in ```json markers, extract valid JSON
@@ -344,9 +339,9 @@ window.addEventListener('load', async () => {
       mappedResumeData = JSON.parse(match[1]);
     }
 
-    console.log('Received API Key:', API_Key || 'Not found');
-    console.log('Received Resume Data:', resumeData || 'Not found');
-    console.log('Received Mapped Resume Data:', mappedResumeData || 'Not found');
+    // console.log('Received API Key:', API_Key || 'Not found');
+    // console.log('Received Resume Data:', resumeDataRaw || 'Not found');
+    // console.log('Received Mapped Resume Data:', mappedResumeData || 'Not found');
   } catch (error) {
     console.error('Error loading data:', error);
   }

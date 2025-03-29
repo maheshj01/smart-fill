@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import "../styles/style.css";
 import "./App.css";
-import KeyValueForm from './KeyValueForm';
 import Constants from './Constants';
 import Gemini from '../../content/gemini';
 
@@ -79,14 +76,13 @@ const PromptForm: React.FC = () => {
     }
   };
 
-
   return (
     <div className="resume-form-container">
       <h2 className="form-title">Paste Your Resume</h2>
 
       <form onSubmit={handleSubmit}>
         <div className="form-group">
-          <label htmlFor="resume" className="form-label">Your Resume Text</label>
+          <label htmlFor="resume" className="form-label">Your Resume here</label>
           <textarea
             id="resume"
             value={context}
@@ -108,6 +104,12 @@ const PromptForm: React.FC = () => {
             placeholder="Enter your API key..."
           />
         </div>
+        {/* Link to get API key */}
+        <a
+          style={{ margin: '10px 0', marginBottom: '20px', display: 'block', color: '#0077cc', textDecoration: 'none' }}
+          href="https://ai.google.dev/gemini-api/docs" target="_blank" rel="noreferrer">
+          Get your API key
+        </a>
 
         {error && <div className="form-error">{error}</div>}
 
