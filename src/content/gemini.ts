@@ -1,4 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import Constants from "../react/components/Constants";
 
 class Gemini {
     apiKey: string;
@@ -6,26 +7,21 @@ class Gemini {
     constructor(apiKey: string) {
         this.apiKey = apiKey;
     }
-    async fetchResumeData(): Promise<string> {
-        chrome.runtime.sendMessage({ action: 'getResumeData' }, (response) => {
+    async fetchData(method_key: string): Promise<any> {
+        chrome.runtime.sendMessage({ action: method_key }, (response) => {
             if (response && response.data) {
-                // Inject the data into the webpage or do whatever is needed with it
-                console.log('Resume data found:', response.data);
                 return response.data;
             } else {
                 console.log('No resume data found');
                 return '';
             }
         });
-        return "";
+        return '';
     }
 
 
     async generateContent(prompt: String): Promise<string> {
         try {
-            const resumeData = await this.fetchResumeData();
-            console.log('resumeData:', resumeData); // Debug logging
-            console.log('Generating content for prompt:', prompt); // Debug logging
             const genAI = new GoogleGenerativeAI(this.apiKey);
             const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
             const result = await model.generateContent(prompt as string);
@@ -37,35 +33,41 @@ class Gemini {
         }
     }
 
-    async fetchAutoFillData(context: object): Promise<string> {
+    async fetchAutoFillData(context: object, currentValue?: string): Promise<string> {
         try {
-            const resumeData = await this.fetchResumeData();
-            // For now, return a sample response based on the context
-            // In a real implementation, you would make an API call here
-            await new Promise(resolve => setTimeout(resolve, 1000));
-
+            console.log('Fetching autofill data:', context, "api key=", this.apiKey);
+            const resumeMap = await this.fetchData(Constants.getMappedResumeData);
+            console.log('resumeMap:', resumeMap);
             const contextObj = context as any;
-            const label = contextObj.label || '';
-            // Generate different responses based on detected label/context
-            if (label.toLowerCase().includes('email') || contextObj.name.toLowerCase().includes('email')) {
-                return 'user@example.com';
-            } else if (label.toLowerCase().includes('name') || contextObj.name.toLowerCase().includes('name')) {
-                if (label.toLowerCase().includes('first')) {
-                    return 'John';
-                } else if (label.toLowerCase().includes('last')) {
-                    return 'Doe';
-                } else {
-                    return 'John Doe';
+            const label = contextObj.label?.toLowerCase() || '';
+            const name = contextObj.name?.toLowerCase() || '';
+
+            // Try finding a match in the resumeData first
+            for (const key of Object.keys(resumeMap)) {
+                if (label.includes(key) || name.includes(key)) {
+                    return resumeMap[key as string];
                 }
-            } else if (label.toLowerCase().includes('phone') || contextObj.name.toLowerCase().includes('phone')) {
-                return '555-123-4567';
-            } else if (label.toLowerCase().includes('address') || contextObj.name.toLowerCase().includes('address')) {
-                return '123 Main St, Anytown, USA';
-            } else {
-                const prompt =
-                    `This is my resume ${resumeData}. Help me autofill the following information: ${label}`;
-                return this.generateContent(prompt);
             }
+
+            // If no match is found, try extracting a value from resumeData
+            const matchedData = resumeMap[label] || resumeMap[name];
+            if (matchedData) return matchedData;
+
+            // If no relevant data is found, generate content using Gemini API
+            const resumeDataContext = await this.fetchData(Constants.getResumeData);
+            const prompt = currentValue && currentValue.length > 0
+                ? currentValue
+                : `
+                    Given this resume context:
+                    ${JSON.stringify(resumeDataContext, null, 2)}
+    
+                    Extract the most relevant value for the input field labeled as: "${label}".
+                    - Ensure the response is concise and formatted correctly.
+                    - If no clear value is found, provide the closest possible match from the resume.
+                    - Do not generate fictional data, only extract from the resume.
+                `;
+
+            return await this.generateContent(prompt);
         } catch (error) {
             console.error('Error fetching data:', error);
             return 'Error occurred';

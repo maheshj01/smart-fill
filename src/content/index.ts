@@ -2,6 +2,7 @@
 
 "use strict";
 
+import { resourceUsage } from "process";
 import Constants from "../react/components/Constants";
 import Gemini from "./gemini";
 
@@ -225,15 +226,13 @@ function getFormContext(form: HTMLFormElement): object {
 
 
 async function handleAutoFill(input: HTMLInputElement | null) {
-  console.log('Handling autofill for', input); // Debug logging
   try {
     const gemini = new Gemini(API_Key || '');
     if (!input) return;
     const inputContext = getInputContext(input);
-    console.log('Input context:', inputContext);
-
-    const data = await gemini.fetchAutoFillData(inputContext);
-    console.log('Got data:', data); // Debug logging
+    console.log('Input context:', inputContext); // Debug logging
+    const currentInputText = input.value;
+    const data = await gemini.fetchAutoFillData(inputContext, currentInputText);
 
     if (input) {
       input.value = data;
@@ -309,15 +308,46 @@ window.addEventListener('load', function () {
 // when page is loaded, get api key from local storage
 
 let API_Key = '';
+let resumeData = '';
+let mappedResumeData = {};
 
-window.addEventListener('load', () => {
-  // Send a message to the background script to fetch the API key
-  chrome.runtime.sendMessage({ action: 'get_api_key' }, (response) => {
-    if (response && response.api_key) {
-      API_Key = response.api_key;
-      console.log('Received API Key:', API_Key);
-    } else {
-      console.error('API Key not found!');
+window.addEventListener('load', async () => {
+  try {
+    const fetchFromBackground = (action: string) =>
+      new Promise((resolve, reject) => {
+        chrome.runtime.sendMessage({ action }, (response) => {
+          if (chrome.runtime.lastError) {
+            reject(`Chrome runtime error: ${chrome.runtime.lastError.message}`);
+          } else if (!response) {
+            reject(`No response received for ${action}`);
+          } else {
+            resolve(response);
+          }
+        });
+      });
+
+    // Fetch all required data in parallel
+    const [apiKeyResponse, resumeResponse, mappedResumeResponse] = await Promise.all([
+      fetchFromBackground(Constants.getApiKey),
+      fetchFromBackground(Constants.getResumeData),
+      fetchFromBackground(Constants.getMappedResumeData),
+    ]);
+
+    // Extract values from responses
+    API_Key = (apiKeyResponse as any)?.data;
+    resumeData = (resumeResponse as any)?.data;
+    const resumeMapData = (mappedResumeResponse as any)?.data;
+
+    // If mapped resume data is wrapped in ```json markers, extract valid JSON
+    const match = resumeMapData?.match(/```json\s*([\s\S]*?)\s*```/);
+    if (match) {
+      mappedResumeData = JSON.parse(match[1]);
     }
-  });
+
+    console.log('Received API Key:', API_Key || 'Not found');
+    console.log('Received Resume Data:', resumeData || 'Not found');
+    console.log('Received Mapped Resume Data:', mappedResumeData || 'Not found');
+  } catch (error) {
+    console.error('Error loading data:', error);
+  }
 });
